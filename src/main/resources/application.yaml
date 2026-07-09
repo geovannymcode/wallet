@@ -11,3 +11,5 @@ spring:
     username: ${SUPABASE_DB_USER}
     url: ${SUPABASE_DB_URL}
     password: ${SUPABASE_DB_PASSWORD}
+
+
