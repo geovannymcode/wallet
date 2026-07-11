@@ -20,6 +20,7 @@ class DefaultAccountService(
         return AccountResponse(account.id, account.owner, account.balance)
     }
 
+    @Transactional
     override fun moveMoney(fromId: UUID, toId: UUID, amount: BigDecimal): MoveResult {
         val from = repository.findById(fromId).orElse(null)
             ?: return MoveResult.AccountNotFound(fromId)
