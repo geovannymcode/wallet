@@ -1,0 +1,2 @@
+### Obtener una cuenta por ID
+GET http://localhost:8080/api/accounts/11111111-1111-1111-1111-111111111111
