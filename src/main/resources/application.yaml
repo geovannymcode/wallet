@@ -1,15 +1,3 @@
 spring:
   application:
     name: wallet
-  jpa:
-    open-in-view: 'false'
-    hibernate:
-      ddl-auto: validate
-  flyway:
-    enabled: 'true'
-  datasource:
-    username: ${SUPABASE_DB_USER}
-    url: ${SUPABASE_DB_URL}
-    password: ${SUPABASE_DB_PASSWORD}
-
-
