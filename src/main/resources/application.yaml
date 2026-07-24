@@ -1,3 +1,19 @@
 spring:
   application:
     name: wallet
+
+  # Supabase (Postgres). Los valores reales van por variables de entorno.
+  datasource:
+    url: ${SUPABASE_DB_URL}
+    username: ${SUPABASE_DB_USER}
+    password: ${SUPABASE_DB_PASSWORD}
+
+  # JPA no crea tablas: de eso se encarga Flyway.
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
+  # Flyway busca las migraciones en db/migration.
+  flyway:
+    enabled: true
