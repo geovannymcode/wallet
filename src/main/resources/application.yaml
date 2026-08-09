@@ -32,3 +32,21 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+    # Consumidor: la clave como texto, el valor como JSON.
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      auto-offset-reset: earliest
+      properties:
+        spring.json.trusted.packages: "com.geovannycode.wallet.*"
+
+  # Mail
+  mail:
+    host: ${SMTP_HOST:localhost}
+    port: ${SMTP_PORT:1025}
+    username: ${SMTP_USER:}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail.smtp.auth: false
+      mail.smtp.starttls.enable: false
