@@ -17,3 +17,18 @@ spring:
   # Flyway busca las migraciones en db/migration.
   flyway:
     enabled: true
+
+  # kafka
+  kafka:
+    bootstrap-servers: ${REDPANDA_BOOTSTRAP}
+    properties:
+      security.protocol: SASL_SSL
+      sasl.mechanism: SCRAM-SHA-256
+      sasl.jaas.config: >-
+        org.apache.kafka.common.security.scram.ScramLoginModule required
+        username="${REDPANDA_USER}"
+        password="${REDPANDA_PASSWORD}";
+    # Productor: la clave como texto, el valor como JSON.
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
