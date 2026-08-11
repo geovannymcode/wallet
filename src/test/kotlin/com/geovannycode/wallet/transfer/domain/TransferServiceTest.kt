@@ -3,7 +3,8 @@ package com.geovannycode.wallet.transfer.domain
 import com.geovannycode.wallet.account.domain.AccountService
 import com.geovannycode.wallet.account.domain.InsufficientFundsException
 import com.geovannycode.wallet.movement.domain.MoveResult
-import com.geovannycode.wallet.movement.domain.MovementService
+import com.geovannycode.wallet.movement.domain.MovimientoRegistrado
+import com.geovannycode.wallet.transfer.messaging.MovimientoPublisher
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -15,8 +16,8 @@ import java.util.UUID
 class TransferServiceTest {
 
     private val accountService = mockk<AccountService>()
-    private val movementService = mockk<MovementService>(relaxed = true)
-    private val transferService = TransferService(accountService, movementService)
+    private val publisher = mockk<MovimientoPublisher>(relaxed = true)
+    private val transferService = TransferService(accountService, publisher)
 
     @Test
     fun `registra el movimiento cuando la transferencia se completa`() {
@@ -26,7 +27,7 @@ class TransferServiceTest {
             TransferRequest(UUID.randomUUID(), UUID.randomUUID(), BigDecimal("5.00"))
         )
 
-        verify(exactly = 1) { movementService.record(any(), any(), any()) }
+        verify(exactly = 1) { publisher.publish(any<MovimientoRegistrado>()) }
     }
 
     @Test
@@ -39,6 +40,6 @@ class TransferServiceTest {
             )
         }
 
-        verify(exactly = 0) { movementService.record(any(), any(), any()) }
+        verify(exactly = 0) { publisher.publish(any<MovimientoRegistrado>()) }
     }
 }
