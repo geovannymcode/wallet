@@ -5,6 +5,7 @@ import java.time.Instant
 import java.util.UUID
 
 data class MovimientoRegistrado(
+    val eventId: UUID = UUID.randomUUID(),
     val fromId: UUID,
     val toId: UUID,
     val amount: BigDecimal,
