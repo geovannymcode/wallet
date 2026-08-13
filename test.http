@@ -15,3 +15,47 @@ Content-Type: application/json
 
 ### 3. Consultar el saldo de Geovanny (debió subir)
 GET http://localhost:8080/api/accounts/22222222-2222-2222-2222-222222222222
+
+
+### ===== Fase 9 · Coroutines =====
+### La transferencia de arriba ya dispara MovimientoCoroutineListener
+### (groupId="notification-coroutines-demo"), que llama en paralelo a los
+### 3 endpoints mock de abajo. Mira la consola: los logs "🐢 procesando" de
+### email/push/antifraude deben aparecer casi al mismo tiempo (~200ms total),
+### no uno tras otro (~600ms).
+
+### 4. Probar el mock de email por separado
+POST http://localhost:8080/mock-external/emails
+Content-Type: application/json
+
+{
+  "eventId": "33333333-3333-3333-3333-333333333333",
+  "fromId": "11111111-1111-1111-1111-111111111111",
+  "toId": "22222222-2222-2222-2222-222222222222",
+  "amount": 5000.00,
+  "occurredAt": "2026-01-01T00:00:00Z"
+}
+
+### 5. Probar el mock de push por separado
+POST http://localhost:8080/mock-external/push
+Content-Type: application/json
+
+{
+  "eventId": "33333333-3333-3333-3333-333333333333",
+  "fromId": "11111111-1111-1111-1111-111111111111",
+  "toId": "22222222-2222-2222-2222-222222222222",
+  "amount": 5000.00,
+  "occurredAt": "2026-01-01T00:00:00Z"
+}
+
+### 6. Probar el mock de antifraude por separado
+POST http://localhost:8080/mock-external/antifraud
+Content-Type: application/json
+
+{
+  "eventId": "33333333-3333-3333-3333-333333333333",
+  "fromId": "11111111-1111-1111-1111-111111111111",
+  "toId": "22222222-2222-2222-2222-222222222222",
+  "amount": 5000.00,
+  "occurredAt": "2026-01-01T00:00:00Z"
+}

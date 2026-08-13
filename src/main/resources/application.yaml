@@ -55,3 +55,6 @@ spring:
 wallet:
   demo:
     dlq-sentinel-enabled: ${WALLET_DEMO_DLQ_SENTINEL:false}
+  notification:
+    # Servicios mock de la Fase 9 (coroutines): ver MockExternalController.
+    external-base-url: ${WALLET_NOTIFICATION_BASE_URL:http://localhost:8080/mock-external}
