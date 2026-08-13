@@ -43,12 +43,6 @@ Se crea el proyecto base con Spring Initializr (Kotlin, Gradle) y se organiza el
 ### Fase 1 — Entidad `Account` y migración inicial
 Se modela la entidad `AccountEntity` (`id`, `owner`, `email`, `balance`, `createdAt`, `updatedAt`) y su repositorio JPA. Flyway introduce la migración `V1__create_accounts.sql`, que crea la tabla `accounts` y siembra dos cuentas de prueba (`Elena` con saldo inicial y `Geovanny` en cero) para poder ejercitar las transferencias en fases posteriores. `ddl-auto: validate` asegura que el esquema real de la BD sea la única fuente de verdad — el esquema lo gobierna Flyway, no Hibernate.
 
-## Entorno local (sin Supabase ni Redpanda Cloud)
-
-¿No tienes credenciales de Supabase o Redpanda Cloud? Levanta todo con Docker
-Compose (Postgres 17, Redpanda y Mailpit). Ver la guía completa en
-[`docs/LOCAL_SETUP.md`](docs/LOCAL_SETUP.md).
-
 ### Fase 2 — Consulta de saldo por REST
 Se expone `GET /api/accounts/{id}`, que devuelve el saldo y datos de una cuenta (`AccountResponse`). Se separa explícitamente la capa `web` (controlador) de la capa `domain` (servicio + repositorio + mapper), estableciendo el patrón que se repite en el resto del proyecto. Si la cuenta no existe, se lanza `AccountNotFoundException`.
 
@@ -81,3 +75,11 @@ Las peticiones de ejemplo están en [`test.http`](test.http).
 ```bash
 ./gradlew test
 ```
+
+## Entorno local (sin Supabase ni Redpanda Cloud)
+
+¿No tienes credenciales de Supabase o Redpanda Cloud? Levanta todo con Docker
+Compose (Postgres 17, Redpanda y Mailpit). Ver la guía completa en
+[`docs/LOCAL_SETUP.md`](docs/LOCAL_SETUP.md).
+
+
