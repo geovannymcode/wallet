@@ -75,3 +75,11 @@ Las peticiones de ejemplo están en [`test.http`](test.http).
 ```bash
 ./gradlew test
 ```
+
+## Entorno local (sin Supabase ni Redpanda Cloud)
+
+¿No tienes credenciales de Supabase o Redpanda Cloud? Levanta todo con Docker
+Compose (Postgres 17, Redpanda y Mailpit). Ver la guía completa en
+[`docs/LOCAL_SETUP.md`](docs/LOCAL_SETUP.md).
+
+

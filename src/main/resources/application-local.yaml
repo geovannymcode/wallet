@@ -1,0 +1,23 @@
+spring:
+  # Perfil "local": usa el docker-compose.yml del repo (Postgres 17 + Redpanda + Mailpit)
+  # en vez de Supabase y Redpanda Cloud. Activarlo con:
+  #   SPRING_PROFILES_ACTIVE=local ./gradlew bootRun
+  datasource:
+    url: jdbc:postgresql://localhost:5432/wallet
+    username: wallet
+    password: wallet
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    # Sin SASL/SSL: Redpanda local corre en modo dev-container, sin autenticación.
+    # Sobrescribimos también sasl.mechanism/sasl.jaas.config (vacíos) para que
+    # Spring no intente resolver los placeholders ${REDPANDA_USER}/${REDPANDA_PASSWORD}
+    # de application.yaml, que no existen en este perfil.
+    properties:
+      security.protocol: PLAINTEXT
+      sasl.mechanism: ""
+      sasl.jaas.config: ""
+
+  mail:
+    host: localhost
+    port: 1025
