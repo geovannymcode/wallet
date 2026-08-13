@@ -19,7 +19,7 @@ class KafkaErrorConfig {
 
     @Bean
     fun errorHandler(kafkaTemplate: KafkaTemplate<Any, Any>): DefaultErrorHandler {
-        // Publica a "wallet.movements.DLT" tras agotar los reintentos.
+        // Publica a "wallet.movements-dlt" (sufijo por defecto "-dlt") tras agotar los reintentos.
         val recoverer = DeadLetterPublishingRecoverer(kafkaTemplate)
         // 3 reintentos, esperando 1 segundo entre cada uno.
         val backOff = FixedBackOff(1000L, 3L)
