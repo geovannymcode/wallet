@@ -2,6 +2,7 @@ package com.geovannycode.wallet.notification.messaging
 
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.mail.SimpleMailMessage
 import org.springframework.mail.javamail.JavaMailSender
@@ -9,7 +10,8 @@ import org.springframework.stereotype.Component
 
 @Component
 class DeadLetterListener(
-    private val mailSender: JavaMailSender
+    private val mailSender: JavaMailSender,
+    @Value("\${wallet.mail.from}") private val mailFrom: String
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -19,7 +21,7 @@ class DeadLetterListener(
 
         // Notificación visual para la demo: el correo aparece en Mailpit (http://localhost:8025).
         val mensaje = SimpleMailMessage().apply {
-            from = "wallet-alerts@baqjug.com"
+            from = mailFrom
             setTo("ops@baqjug.com")
             subject = "⚠️ Mensaje enviado a la DLQ: wallet.movements.DLT"
             text = "Un evento no pudo procesarse tras los reintentos y fue apartado a la DLQ.\n\n" +
