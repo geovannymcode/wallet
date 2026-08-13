@@ -16,7 +16,9 @@ class DeadLetterListener(
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
-    @KafkaListener(topics = ["wallet.movements.DLT"], groupId = "dlt-demo")
+    // DeadLetterPublishingRecoverer, sin resolver custom, usa por defecto el
+    // sufijo "-dlt" (cr.topic() + "-dlt"), no ".DLT".
+    @KafkaListener(topics = ["wallet.movements-dlt"], groupId = "dlt-demo")
     fun onDead(record: ConsumerRecord<String, String>) {
         log.warn("💀 Mensaje muerto en el DLT: key={} value={}", record.key(), record.value())
 
@@ -24,7 +26,7 @@ class DeadLetterListener(
         val mensaje = SimpleMailMessage().apply {
             from = mailFrom
             setTo(opsTo)
-            subject = "⚠️ Mensaje enviado a la DLQ: wallet.movements.DLT"
+            subject = "⚠️ Mensaje enviado a la DLQ: wallet.movements-dlt"
             text = "Un evento no pudo procesarse tras los reintentos y fue apartado a la DLQ.\n\n" +
                 "key: ${record.key()}\n" +
                 "value: ${record.value()}\n" +
