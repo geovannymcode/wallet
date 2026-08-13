@@ -1,0 +1,63 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: wallet-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: wallet
+      POSTGRES_USER: wallet
+      POSTGRES_PASSWORD: wallet
+    ports:
+      - "5432:5432"
+    volumes:
+      - wallet-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wallet -d wallet"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: wallet-mailpit
+    restart: unless-stopped
+    ports:
+      - "1025:1025" # SMTP (lo que usa la app para enviar correos)
+      - "8025:8025" # UI web para ver los correos capturados
+
+  redpanda:
+    image: redpandadata/redpanda:latest
+    container_name: wallet-redpanda
+    restart: unless-stopped
+    command:
+      - redpanda
+      - start
+      - --node-id=0
+      - --mode=dev-container
+      - --smp=1
+      - --memory=1G
+      - --reserve-memory=0M
+      - --overprovisioned
+      - --kafka-addr=PLAINTEXT://0.0.0.0:9092
+      - --advertise-kafka-addr=PLAINTEXT://localhost:9092
+      - --pandaproxy-addr=PLAINTEXT://0.0.0.0:8082
+      - --advertise-pandaproxy-addr=PLAINTEXT://localhost:8082
+      - --schema-registry-addr=PLAINTEXT://0.0.0.0:8081
+    ports:
+      - "9092:9092"   # Kafka API (bootstrap-servers)
+      - "8081:8081"   # Schema Registry
+      - "8082:8082"   # Pandaproxy (REST)
+
+  redpanda-console:
+    image: redpandadata/console:latest
+    container_name: wallet-redpanda-console
+    restart: unless-stopped
+    environment:
+      KAFKA_BROKERS: redpanda:9092
+    ports:
+      - "8090:8080"   # UI web para ver topics, mensajes y el DLT (http://localhost:8090)
+    depends_on:
+      - redpanda
+
+volumes:
+  wallet-postgres-data:
