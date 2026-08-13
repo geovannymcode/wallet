@@ -11,7 +11,8 @@ import org.springframework.stereotype.Component
 @Component
 class DeadLetterListener(
     private val mailSender: JavaMailSender,
-    @Value("\${wallet.mail.from}") private val mailFrom: String
+    @Value("\${wallet.mail.from}") private val mailFrom: String,
+    @Value("\${wallet.mail.ops-to}") private val opsTo: String
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -22,7 +23,7 @@ class DeadLetterListener(
         // Notificación visual para la demo: el correo aparece en Mailpit (http://localhost:8025).
         val mensaje = SimpleMailMessage().apply {
             from = mailFrom
-            setTo("ops@baqjug.com")
+            setTo(opsTo)
             subject = "⚠️ Mensaje enviado a la DLQ: wallet.movements.DLT"
             text = "Un evento no pudo procesarse tras los reintentos y fue apartado a la DLQ.\n\n" +
                 "key: ${record.key()}\n" +
@@ -30,6 +31,9 @@ class DeadLetterListener(
                 "topic origen: wallet.movements\n" +
                 "partition: ${record.partition()}, offset: ${record.offset()}"
         }
-        mailSender.send(mensaje)
+        // El evento muerto ya quedó registrado en el log de arriba; que el envío
+        // de correo falle (por ejemplo, un 403 de Resend) no debe tumbar el consumo.
+        runCatching { mailSender.send(mensaje) }
+            .onFailure { log.error("No se pudo notificar la DLQ por correo", it) }
     }
 }

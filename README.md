@@ -59,6 +59,48 @@ Se agrega `POST /api/transfers`, que recibe `fromId`, `toId` y `amount` (`Transf
 ### Fase 4 — Registro de movimientos (histórico de transferencias)
 Se añade el módulo `movement`: la tabla `movements` (migración `V2__create_movements.sql`) guarda cada transferencia realizada (`fromId`, `toId`, `amount`, `occurredAt`). `MovementService.record(...)` persiste el movimiento, y `TransferService` lo invoca de forma síncrona y directa justo después de que `AccountService.moveMoney(...)` confirma el `Success` — dejando explícita la costura entre ambos módulos como punto de evolución futura (por ejemplo, hacia un modelo basado en eventos). Se incorpora `TransferServiceTest`, que usando MockK verifica la orquestación: se registra el movimiento solo cuando la transferencia se completa, y no se registra si falla por saldo insuficiente.
 
+> Entre la Fase 4 y la Fase 10 el proyecto incorpora Kafka (patrón outbox, idempotencia por `eventId`, notificación por correo, error handling con reintentos + Dead Letter Queue) y coroutines — pendiente de documentar fase por fase. Ver `docs/LOCAL_SETUP.md` para el flujo completo de eventos y la demo de DLQ.
+
+### Fase 10 — Empaquetado, CI/CD y despliegue
+
+Se empaqueta la aplicación con un `Dockerfile` multi-etapa: la primera etapa (`eclipse-temurin:25-jdk`) compila el `jar` con `./gradlew bootJar`, y la segunda (`eclipse-temurin:25-jre`) solo copia el artefacto generado, de modo que la imagen final no carga con el compilador ni el código fuente. Como alternativa existe `./gradlew bootBuildImage` (buildpacks), pero se prefiere el `Dockerfile` explícito porque deja visible cada paso del build y no depende de convenciones de un plugin externo.
+
+La integración continua corre en `.github/workflows/ci.yml` en cada `push` y cada pull request a `main`: hace *checkout*, configura JDK 25 (Temurin) y ejecuta `./gradlew test`. Los tests con MockK de la Fase 4 corren sin infraestructura, y los que sí la necesitan (Testcontainers) también funcionan porque el runner de GitHub Actions trae Docker disponible.
+
+El despliegue continuo ocurre en Render: el Web Service se conecta al repositorio, detecta el `Dockerfile` y reconstruye la imagen con cada `push` a `main`. El reparto queda limpio: Actions se encarga del CI, Render del CD, y no hace falta guardar secretos de despliegue en Actions. La configuración del servicio es Language `Docker`, Branch `main`, Dockerfile Path `./Dockerfile`, Root Directory vacío, Region `Virginia (US East)` —por cercanía con el clúster de Redpanda en `us-east-1`— e Instance Type `Free`.
+
+La configuración queda externalizada para que el mismo binario corra en local y en la nube: los defaults de `application.yaml` apuntan al entorno de Docker Compose, y las variables de entorno lo reapuntan a Supabase, Redpanda y Resend. `server.port: ${PORT:8080}` existe porque Render asigna el puerto por variable de entorno, y esa variable no se crea a mano: la inyecta la plataforma. El nombre de cada variable lo decide `application.yaml`, no el host.
+
+| Variable | Ejemplo | Para qué |
+|---|---|---|
+| `SUPABASE_DB_URL` | `jdbc:postgresql://<host>.pooler.supabase.com:5432/postgres` | Conexión a Postgres |
+| `SUPABASE_DB_USER` | `postgres.<ref-del-proyecto>` | Usuario del pooler |
+| `SUPABASE_DB_PASSWORD` | *(secreto)* | Clave de la base |
+| `REDPANDA_BOOTSTRAP` | `<cluster>.any.us-east-1.mpx.prd.cloud.redpanda.com:9092` | Broker de eventos |
+| `REDPANDA_USER` | `workshop-wallet` | Usuario SASL |
+| `REDPANDA_PASSWORD` | *(secreto)* | Clave SASL |
+| `JAVA_TOOL_OPTIONS` | `-XX:MaxRAMPercentage=70 -Xss512k` | Que la JVM quepa en 512 MB |
+| `SMTP_HOST` | `smtp.resend.com` | Servidor de correo |
+| `SMTP_PORT` | `587` | Puerto SMTP |
+| `SMTP_USER` | `resend` | Literalmente la palabra `resend` |
+| `SMTP_PASSWORD` | `re_xxxx...` | API key de Resend |
+| `SMTP_AUTH` | `true` | Activa autenticación |
+| `SMTP_STARTTLS` | `true` | Activa TLS |
+| `MAIL_FROM` | `onboarding@resend.dev` | Remitente |
+| `MAIL_OPS_TO` | *(correo de operaciones)* | Destino de las alertas de DLQ |
+
+El correo se maneja distinto en cada entorno. En local, Mailpit (`localhost:1025`, bandeja en `http://localhost:8025`) recibe todo sin restricciones ni cuentas. En la nube ese `localhost` no existe, así que entra Resend por SMTP. En modo sandbox, con el remitente `onboarding@resend.dev`, Resend solo entrega al correo registrado en la cuenta y cualquier otro destinatario devuelve `403`; para levantar esa restricción hay que verificar un dominio propio en la sección *Domains* de Resend. Por la misma razón, los datos semilla de `V1__create_accounts.sql` (correos `elena@example.com` y `geovanny@example.com`) no reciben nada en sandbox: para que `EmailNotifier` entregue de verdad, la cuenta destino de la demo debe tener el correo registrado en la cuenta de Resend, o debe usarse un dominio propio verificado.
+
+Algunas notas operativas:
+
+- El `Dockerfile` debe estar en `main` antes de conectar el repositorio en Render.
+- `gradlew` necesita bit de ejecución en git (`git ls-files -s gradlew` debe dar `100755`; se corrige con `git update-index --chmod=+x gradlew`), o el runner Linux falla con `permission denied`.
+- Sin `JAVA_TOOL_OPTIONS`, la JVM asume que es dueña de la máquina y el plan Free de 512 MB se queda sin memoria.
+- El plan Free duerme el servicio tras 15 minutos sin tráfico: el primer *request* tarda alrededor de 50 segundos en despertar el contenedor.
+- El primer build puede tomar entre 8 y 10 minutos porque el multi-etapa descarga Gradle desde cero.
+- El *pooler* de Supabase debe usarse en el puerto 5432 (*session mode*); el 6543 (*transaction mode*) rompe los *prepared statements* de Hibernate.
+- `TOPIC_AUTHORIZATION_FAILED` en Redpanda también aparece cuando el tópico no existe y el usuario no puede crearlo, porque el *broker* no revela qué tópicos hay. Las ACLs necesarias son Topic (`Prefixed` / `wallet.`), Consumer Group (`Prefixed` / `wallet.`, con el `group.id` usando ese mismo prefijo) y Cluster con `IdempotentWrite`, ya que el *producer* de Spring Boot trae `enable.idempotence=true` por defecto.
+
 ## Cómo correrlo
 
 ```bash
