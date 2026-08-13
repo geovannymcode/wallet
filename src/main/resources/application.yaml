@@ -50,3 +50,8 @@ spring:
     properties:
       mail.smtp.auth: false
       mail.smtp.starttls.enable: false
+
+# Flags de demo para el taller. No usar en producción.
+wallet:
+  demo:
+    dlq-sentinel-enabled: ${WALLET_DEMO_DLQ_SENTINEL:false}
