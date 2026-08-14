@@ -80,16 +80,11 @@ La configuración queda externalizada para que el mismo binario corra en local y
 | `REDPANDA_USER` | `workshop-wallet` | Usuario SASL |
 | `REDPANDA_PASSWORD` | *(secreto)* | Clave SASL |
 | `JAVA_TOOL_OPTIONS` | `-XX:MaxRAMPercentage=70 -Xss512k` | Que la JVM quepa en 512 MB |
-| `SMTP_HOST` | `smtp.resend.com` | Servidor de correo |
-| `SMTP_PORT` | `587` | Puerto SMTP |
-| `SMTP_USER` | `resend` | Literalmente la palabra `resend` |
-| `SMTP_PASSWORD` | `re_xxxx...` | API key de Resend |
-| `SMTP_AUTH` | `true` | Activa autenticación |
-| `SMTP_STARTTLS` | `true` | Activa TLS |
+| `RESEND_API_KEY` | `re_xxxx...` | API key de Resend (autenticación `Bearer` sobre HTTPS) |
 | `MAIL_FROM` | `onboarding@resend.dev` | Remitente |
 | `MAIL_OPS_TO` | *(correo de operaciones)* | Destino de las alertas de DLQ |
 
-El correo se maneja distinto en cada entorno. En local, Mailpit (`localhost:1025`, bandeja en `http://localhost:8025`) recibe todo sin restricciones ni cuentas. En la nube ese `localhost` no existe, así que entra Resend por SMTP. En modo sandbox, con el remitente `onboarding@resend.dev`, Resend solo entrega al correo registrado en la cuenta y cualquier otro destinatario devuelve `403`; para levantar esa restricción hay que verificar un dominio propio en la sección *Domains* de Resend. Por la misma razón, los datos semilla de `V1__create_accounts.sql` (correos `elena@example.com` y `geovanny@example.com`) no reciben nada en sandbox: para que `EmailNotifier` entregue de verdad, la cuenta destino de la demo debe tener el correo registrado en la cuenta de Resend, o debe usarse un dominio propio verificado.
+El correo se maneja distinto en cada entorno, vía la interfaz `MailPort` (`notification/domain`). En local, `SmtpMailPort` (perfil `local`) envía por SMTP sin autenticación a Mailpit (`localhost:1025`, bandeja en `http://localhost:8025`). En la nube, `ResendMailPort` (cualquier otro perfil) llama a la API HTTP de Resend (`https://api.resend.com/emails`, puerto 443) en vez de SMTP — **Render bloquea el tráfico saliente por los puertos SMTP (25/465/587) en el plan Free**, así que `spring-mail` contra `smtp.resend.com:587` se queda colgado con `Connection timed out` hasta agotar el timeout. En modo sandbox, con el remitente `onboarding@resend.dev`, Resend solo entrega al correo registrado en la cuenta y cualquier otro destinatario devuelve `403`; para levantar esa restricción hay que verificar un dominio propio en la sección *Domains* de Resend. Por la misma razón, los datos semilla de `V1__create_accounts.sql` (correos `elena@example.com` y `geovanny@example.com`) no reciben nada en sandbox: para que `EmailNotifier` entregue de verdad, la cuenta destino de la demo debe tener el correo registrado en la cuenta de Resend, o debe usarse un dominio propio verificado.
 
 Algunas notas operativas:
 

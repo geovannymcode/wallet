@@ -56,16 +56,6 @@ spring:
       # o el tópico existan, en vez de dejar los consumers muertos.
       auth-exception-retry-interval: 10s
 
-  # Mail
-  mail:
-    host: ${SMTP_HOST:localhost}
-    port: ${SMTP_PORT:1025}
-    username: ${SMTP_USER:}
-    password: ${SMTP_PASSWORD:}
-    properties:
-      mail.smtp.auth: ${SMTP_AUTH:false}
-      mail.smtp.starttls.enable: ${SMTP_STARTTLS:false}
-
 # Flags de demo para el taller. No usar en producción.
 wallet:
   demo:
@@ -74,3 +64,6 @@ wallet:
   mail:
     from: ${MAIL_FROM:wallet@localhost}
     ops-to: ${MAIL_OPS_TO:ops@localhost}
+    # API HTTP de Resend (no SMTP): Render bloquea los puertos SMTP salientes
+    # (25/465/587) en el plan Free. Ver ResendMailPort.
+    resend-api-key: ${RESEND_API_KEY}

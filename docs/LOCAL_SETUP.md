@@ -106,7 +106,8 @@ WALLET_DEMO_DLQ_SENTINEL=true SPRING_PROFILES_ACTIVE=local ./gradlew bootRun
 
 Con el centinela activo, el `DefaultErrorHandler` (`KafkaErrorConfig`)
 reintenta 3 veces (1s entre intentos) y, agotados los reintentos, el
-`DeadLetterPublishingRecoverer` publica el evento en `wallet.movements.DLT`.
+`DeadLetterPublishingRecoverer` publica el evento en `wallet.movements-dlt`
+(sufijo por defecto `-dlt`, no `.DLT`).
 
 ### 5.1. Producir un evento "envenenado" directo al tópico
 
@@ -134,11 +135,11 @@ falta configurar credenciales en `rpk`):
 3. **rpk / Redpanda Console**:
 
    ```bash
-   docker exec -it wallet-redpanda rpk topic consume wallet.movements.DLT
+   docker exec -it wallet-redpanda rpk topic consume wallet.movements-dlt
    ```
 
    o en la UI web (<http://localhost:8090>), abre el tópico
-   `wallet.movements.DLT` y revisa los mensajes.
+   `wallet.movements-dlt` y revisa los mensajes.
 
 > ⚠️ Recuerda: el centinela de `amount < 0` en `MovimientoPersistenceListener`
 > es **solo para esta demo**. Al estar apagado por defecto
