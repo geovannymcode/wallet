@@ -49,6 +49,12 @@ spring:
         spring.deserializer.key.delegate.class: org.apache.kafka.common.serialization.StringDeserializer
         spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
         spring.json.trusted.packages: "com.geovannycode.wallet.*"
+        # Ignoramos el header __TypeId__ (el tipo Java que puso el productor al
+        # serializar) y forzamos siempre este tipo: es el único evento que viaja
+        # por wallet.movements, y así el consumidor no depende de qué clase haya
+        # usado el productor para serializar cada mensaje.
+        spring.json.use.type.headers: false
+        spring.json.value.default.type: com.geovannycode.wallet.movement.domain.MovimientoRegistrado
 
     listener:
       # Sin esto, un AuthorizationException (ACL/topic no listo aún) apaga el
